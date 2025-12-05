@@ -89,41 +89,46 @@
                     const maxScore = validScores.length > 0 ? Math.max(...validScores) : null;
                     const minScore = validScores.length > 0 ? Math.min(...validScores) : null;
 
-                    let hasAssignedMax = false;
-                    let hasAssignedMin = false;
+                    // UPDATED LOGIC: Menggunakan Counter, bukan Boolean
+                    let countAssignedMax = 0;
+                    let countAssignedMin = 0;
 
                     const scoresWithStatus = tpColumns.map((col, idx) => {
                         const val = rawScores[idx];
                         let status = '';
                         if (val !== null) {
-                            if (val === maxScore && !hasAssignedMax) {
-                                status = 'T';
-                                hasAssignedMax = true;
-                            } else if (val === minScore && !hasAssignedMin && val !== maxScore) {
-                                status = 'R';
-                                hasAssignedMin = true;
+                            // Cek Max (T) - Maksimal 2
+                            if (val === maxScore) {
+                                if (countAssignedMax < 2) {
+                                    status = 'T';
+                                    countAssignedMax++;
+                                }
+                            } 
+                            // Cek Min (R) - Maksimal 2. 
+                            // Syarat: tidak boleh sama dengan Max (kecuali jika Max=Min, maka prioritas T)
+                            else if (val === minScore) {
+                                if (countAssignedMin < 2) {
+                                    status = 'R';
+                                    countAssignedMin++;
+                                }
                             }
                         }
                         return { val: val, status: status };
                     });
 
                     const sum = validScores.reduce((a, b) => a + b, 0);
-                    // UPDATED: Membulatkan ke bilangan bulat terdekat
+                    // Membulatkan ke bilangan bulat terdekat
                     const avg = validScores.length ? Math.round(sum / validScores.length) : 0;
 
                     return { ...student, scoresWithStatus, average: avg };
                 });
             }, [students, scores, tpColumns]);
 
-            // --- FUNCTION: SALIN HASIL (UPDATED) ---
+            // --- FUNCTION: SALIN HASIL ---
             const handleCopyResults = () => {
-                // UPDATED: Tidak menggunakan Header, langsung data saja
-                
                 // 1. Buat Isi Baris (HANYA Nilai Rapor + Status)
                 const dataRows = processedData.map(s => {
-                    // Ambil rata-rata (Nilai Rapor)
                     const nilaiRapor = s.average;
-                    // Ambil status-status
                     const statuses = s.scoresWithStatus.map(d => d.status ?? "").join("\t");
                     return `${nilaiRapor}\t${statuses}`;
                 }).join("\n");
@@ -342,7 +347,7 @@
                                     <div className="flex justify-between items-center mb-6">
                                         <div>
                                             <h1 className="text-2xl font-bold text-slate-800">Input Nilai & Status Per TP</h1>
-                                            <p className="text-slate-500 text-sm mt-1">Status <strong>'T'</strong> (Tertinggi) & <strong>'R'</strong> (Terendah).</p>
+                                            <p className="text-slate-500 text-sm mt-1">Status <strong>'T'</strong> (Tertinggi) & <strong>'R'</strong> (Terendah). Maksimal 2 per status jika nilai sama.</p>
                                         </div>
                                         <div className="flex gap-2">
                                             {Object.keys(scores).length > 0 && (
